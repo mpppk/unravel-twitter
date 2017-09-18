@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"io/ioutil"
 	"net/url"
 	"path"
 
-	"github.com/ChimeraCoder/anaconda"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+
 	"github.com/mpppk/unravel-twitter/etc"
 	"github.com/mpppk/unravel-twitter/twitter"
 	"github.com/spf13/cobra"
@@ -35,11 +36,7 @@ var RootCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		anaconda.SetConsumerKey(config.ConsumerKey)
-		anaconda.SetConsumerSecret(config.ConsumerSecret)
-
-		api := anaconda.NewTwitterApi(config.AccessToken, config.AccessTokenSecret)
-		api.SetLogger(anaconda.BasicLogger) // logger を設定
+		api := twitter.CreateClient(config)
 
 		tweets, err := api.GetUserTimeline(url.Values{
 			"screen_name":     []string{config.ScreenName},
@@ -58,12 +55,31 @@ var RootCmd = &cobra.Command{
 		for _, tweet := range tweets {
 			for _, media := range tweet.Entities.Media {
 				tweetImages = append(tweetImages, &twitter.TweetImageMetaData{
-					Id:   tweet.Id,
-					Url:  media.Media_url,
-					Text: tweet.Text,
+					MediaNo: tweet.Id,
+					Url:     media.Media_url,
+					Text:    tweet.Text,
 				})
 			}
 		}
+
+		db, err := gorm.Open("sqlite3", "gormtest.db")
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+
+		// Migrate the schema
+		db.AutoMigrate(&twitter.TweetImageMetaData{})
+
+		for _, tweetImage := range tweetImages {
+			// Create
+			db.Create(tweetImage)
+		}
+
+		var newTweetImage twitter.TweetImageMetaData
+		db.First(&newTweetImage, 1) // find product with id 1
+
+		fmt.Printf("%#v", newTweetImage)
 
 		imageMetaData := twitter.MetaDataSet{
 			MediaType: "twitter",

@@ -44,9 +44,9 @@ func main() {
 	for _, tweet := range tweets {
 		for _, media := range tweet.Entities.Media {
 			tweetImages = append(tweetImages, &twitter.TweetImageMetaData{
-				Id:   tweet.Id,
-				Url:  media.Media_url,
-				Text: tweet.Text,
+				MediaNo: tweet.Id,
+				Url:     media.Media_url,
+				Text:    tweet.Text,
 			})
 		}
 	}

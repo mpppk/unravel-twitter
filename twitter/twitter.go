@@ -1,13 +1,20 @@
 package twitter
 
+import (
+	"github.com/ChimeraCoder/anaconda"
+	"github.com/jinzhu/gorm"
+	"github.com/mpppk/unravel-twitter/etc"
+)
+
 type TweetImageMetaData struct {
-	Id   int64
-	Url  string
-	Text string
+	gorm.Model
+	MediaNo int64
+	Url     string
+	Text    string
 }
 
 func (t *TweetImageMetaData) GetId() int64 {
-	return t.Id
+	return t.MediaNo
 }
 
 func (t *TweetImageMetaData) GetUrl() string {
@@ -28,4 +35,13 @@ type MetaDataSet struct {
 	MediaType string
 	Source    string
 	List      []MetaData
+}
+
+func CreateClient(config *etc.Config) *anaconda.TwitterApi {
+	anaconda.SetConsumerKey(config.ConsumerKey)
+	anaconda.SetConsumerSecret(config.ConsumerSecret)
+
+	api := anaconda.NewTwitterApi(config.AccessToken, config.AccessTokenSecret)
+	api.SetLogger(anaconda.BasicLogger) // logger を設定
+	return api
 }
