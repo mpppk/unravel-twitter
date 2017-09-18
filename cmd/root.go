@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/mpppk/unravel-twitter/etc"
 	"github.com/mpppk/unravel-twitter/twitter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -29,22 +30,24 @@ var RootCmd = &cobra.Command{
 	Short: "A brief description of your application",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		anaconda.SetConsumerKey(viper.GetString("twitter.consumerKey"))
-		anaconda.SetConsumerSecret(viper.GetString("twitter.consumerSecret"))
+		config, err := etc.LoadConfigFromFile()
+		if err != nil {
+			fmt.Println(err)
+		}
 
-		api := anaconda.NewTwitterApi(viper.GetString("twitter.accessToken"), viper.GetString("twitter.accessTokenSecret"))
+		anaconda.SetConsumerKey(config.ConsumerKey)
+		anaconda.SetConsumerSecret(config.ConsumerSecret)
+
+		api := anaconda.NewTwitterApi(config.AccessToken, config.AccessTokenSecret)
 		api.SetLogger(anaconda.BasicLogger) // logger を設定
 
-		SCREEN_NAME := viper.GetString("twitter.screenName")
-		MAX_ID := viper.GetString("twitter.maxId")
-
 		tweets, err := api.GetUserTimeline(url.Values{
-			"screen_name":     []string{SCREEN_NAME},
+			"screen_name":     []string{config.ScreenName},
 			"count":           []string{"200"},
 			"exclude_replies": []string{"true"},
 			"trim_user":       []string{"true"},
 			"include_rts":     []string{"false"},
-			"max_id":          []string{MAX_ID}})
+			"max_id":          []string{config.MaxId}})
 
 		if err != nil {
 			fmt.Println("GetUserTimeline error")
@@ -64,7 +67,7 @@ var RootCmd = &cobra.Command{
 
 		imageMetaData := twitter.MetaDataSet{
 			MediaType: "twitter",
-			Source:    SCREEN_NAME,
+			Source:    config.ScreenName,
 			List:      tweetImages,
 		}
 
@@ -106,7 +109,6 @@ func init() {
 	viper.BindPFlag("twitter.accessToken", RootCmd.PersistentFlags().Lookup("access-token"))
 	RootCmd.PersistentFlags().StringVar(&accessTokenSecret, "access-token-secret", "", "")
 	viper.BindPFlag("twitter.accessTokenSecret", RootCmd.PersistentFlags().Lookup("access-token-secret"))
-
 }
 
 // initConfig reads in config file and ENV variables if set.
