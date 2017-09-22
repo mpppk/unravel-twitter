@@ -5,7 +5,6 @@ import "github.com/spf13/viper"
 type Config struct {
 	ConsumerKey       string
 	ConsumerSecret    string
-	ScreenName        string
 	MaxId             string
 	AccessToken       string
 	AccessTokenSecret string

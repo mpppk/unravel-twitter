@@ -14,7 +14,6 @@ import (
 	"github.com/mpppk/unravel-twitter/twitter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 )
 
 var cfgFile string
@@ -28,7 +27,7 @@ var accessTokenSecret string
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "unravel-twitter",
-	Short: "A brief description of your application",
+	Short: "twitter crawler for unravel",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		config, err := etc.LoadConfigFromFile()
@@ -39,7 +38,7 @@ var RootCmd = &cobra.Command{
 		api := twitter.CreateClient(config)
 
 		tweets, err := api.GetUserTimeline(url.Values{
-			"screen_name":     []string{config.ScreenName},
+			"screen_name":     []string{screenName},
 			"count":           []string{"200"},
 			"exclude_replies": []string{"true"},
 			"trim_user":       []string{"true"},
@@ -55,14 +54,16 @@ var RootCmd = &cobra.Command{
 		for _, tweet := range tweets {
 			for _, media := range tweet.Entities.Media {
 				tweetImages = append(tweetImages, &twitter.TweetImageMetaData{
-					MediaNo: tweet.Id,
-					Url:     media.Media_url,
-					Text:    tweet.Text,
+					MediaType:   "twitter",
+					Source:      screenName,
+					MediaNo:     tweet.Id,
+					Url:         media.Media_url,
+					Description: tweet.Text,
 				})
 			}
 		}
 
-		db, err := gorm.Open("sqlite3", "gormtest.db")
+		db, err := gorm.Open("sqlite3", "test.db")
 		if err != nil {
 			panic(err)
 		}
@@ -72,27 +73,8 @@ var RootCmd = &cobra.Command{
 		db.AutoMigrate(&twitter.TweetImageMetaData{})
 
 		for _, tweetImage := range tweetImages {
-			// Create
 			db.Create(tweetImage)
 		}
-
-		var newTweetImage twitter.TweetImageMetaData
-		db.First(&newTweetImage, 1) // find product with id 1
-
-		fmt.Printf("%#v", newTweetImage)
-
-		imageMetaData := twitter.MetaDataSet{
-			MediaType: "twitter",
-			Source:    config.ScreenName,
-			List:      tweetImages,
-		}
-
-		d, err := yaml.Marshal(&imageMetaData)
-		if err != nil {
-			panic(err)
-		}
-
-		ioutil.WriteFile("test.yaml", d, 0777)
 	},
 }
 
@@ -118,7 +100,6 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&consumerSecret, "consumer-secret", "", "twitter consumer key")
 	viper.BindPFlag("twitter.consumerSecret", RootCmd.PersistentFlags().Lookup("consumer-secret"))
 	RootCmd.PersistentFlags().StringVar(&screenName, "screen-name", "", "")
-	viper.BindPFlag("twitter.screenName", RootCmd.PersistentFlags().Lookup("screen-name"))
 	RootCmd.PersistentFlags().StringVar(&maxId, "max-id", "", "")
 	viper.BindPFlag("twitter.maxId", RootCmd.PersistentFlags().Lookup("max-id"))
 	RootCmd.PersistentFlags().StringVar(&accessToken, "access-token", "", "")

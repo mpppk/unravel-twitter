@@ -8,9 +8,11 @@ import (
 
 type TweetImageMetaData struct {
 	gorm.Model
-	MediaNo int64
-	Url     string
-	Text    string
+	Source      string
+	MediaType   string
+	MediaNo     int64
+	Url         string
+	Description string
 }
 
 func (t *TweetImageMetaData) GetId() int64 {
@@ -22,7 +24,7 @@ func (t *TweetImageMetaData) GetUrl() string {
 }
 
 func (t *TweetImageMetaData) GetText() string {
-	return t.Text
+	return t.Description
 }
 
 type MetaData interface {
