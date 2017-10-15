@@ -15,6 +15,10 @@ type TweetImageMetaData struct {
 	Description string
 }
 
+func (t *TweetImageMetaData) TableName() string {
+	return "images"
+}
+
 func (t *TweetImageMetaData) GetId() int64 {
 	return t.MediaNo
 }
