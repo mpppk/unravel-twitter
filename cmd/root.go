@@ -50,30 +50,32 @@ var RootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		tweetImages := []twitter.MetaData{}
+		tweetImages := []*twitter.Image{}
 		for _, tweet := range tweets {
 			for _, media := range tweet.Entities.Media {
-				tweetImages = append(tweetImages, &twitter.TweetImageMetaData{
-					MediaType:   "twitter",
-					Source:      screenName,
-					MediaNo:     tweet.Id,
+				tweetImages = append(tweetImages, &twitter.Image{
 					Url:         media.Media_url,
 					Description: tweet.Text,
 				})
 			}
 		}
 
-		db, err := gorm.Open("sqlite3", "test.db")
+		db, err := gorm.Open("sqlite3", "test2.db")
 		if err != nil {
 			panic(err)
 		}
 		defer db.Close()
 
 		// Migrate the schema
-		db.AutoMigrate(&twitter.TweetImageMetaData{})
+		db.AutoMigrate(&twitter.Image{}, &twitter.Label{})
+
+		var twitterLabel twitter.Label
+		db.FirstOrCreate(&twitterLabel, twitter.Label{Name: "twitter"})
 
 		for _, tweetImage := range tweetImages {
-			db.Create(tweetImage)
+			db.Create(tweetImage).Association("Labels").Append(
+				[]twitter.Label{twitterLabel},
+			)
 		}
 	},
 }

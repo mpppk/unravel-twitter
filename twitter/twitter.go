@@ -6,41 +6,18 @@ import (
 	"github.com/mpppk/unravel-twitter/etc"
 )
 
-type TweetImageMetaData struct {
+type Image struct {
 	gorm.Model
-	Source      string
-	MediaType   string
-	MediaNo     int64
 	Url         string
 	Description string
+	Labels      []Label `gorm:"many2many:imageLabel;"`
 }
 
-func (t *TweetImageMetaData) TableName() string {
-	return "images"
-}
-
-func (t *TweetImageMetaData) GetId() int64 {
-	return t.MediaNo
-}
-
-func (t *TweetImageMetaData) GetUrl() string {
-	return t.Url
-}
-
-func (t *TweetImageMetaData) GetText() string {
-	return t.Description
-}
-
-type MetaData interface {
-	GetId() int64
-	GetUrl() string
-	GetText() string
-}
-
-type MetaDataSet struct {
-	MediaType string
-	Source    string
-	List      []MetaData
+type Label struct {
+	gorm.Model
+	Name   string
+	Value  string
+	Images []Image `gorm:"many2many:imageLabel;"`
 }
 
 func CreateClient(config *etc.Config) *anaconda.TwitterApi {
