@@ -6,7 +6,6 @@ import (
 
 	"path"
 
-	"github.com/mpppk/unravel-twitter/adapter"
 	"github.com/mpppk/unravel-twitter/etc"
 	"github.com/mpppk/unravel-twitter/twitter"
 	"github.com/spf13/cobra"
@@ -32,44 +31,22 @@ var RootCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		crawler := twitter.NewCrawler(&twitter.Config{
+		crawler, err := twitter.NewCrawler(&twitter.Config{
 			ScreenName:        screenName,
 			ConsumerKey:       config.ConsumerKey,
 			ConsumerSecret:    config.ConsumerSecret,
 			AccessToken:       config.AccessToken,
 			AccessTokenSecret: config.AccessTokenSecret,
 		})
-
-		tweets, err := crawler.Fetch(891205360702210049)
-
-		if err != nil {
-			fmt.Println("GetUserTimeline error")
-			panic(err)
-		}
-
-		adpt, err := adapter.New(false)
 		if err != nil {
 			panic(err)
 		}
 
-		for _, tweet := range tweets {
-			for _, media := range tweet.Entities.Media {
-				image := &adapter.Image{
-					Url:         media.Media_url,
-					Description: tweet.Text,
-				}
-
-				err := adpt.AddLabelsToImage(image, []adapter.NewLabel{
-					{Name: "twitter"},
-					{Name: "twitterid", Value: fmt.Sprint(tweet.Id)},
-				})
-				if err != nil {
-					panic(err)
-				}
-			}
+		err = crawler.FetchAndSave(891205360702210049)
+		if err != nil {
+			panic(err)
 		}
-
-		adpt.Close()
+		crawler.Close()
 	},
 }
 
