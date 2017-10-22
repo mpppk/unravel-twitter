@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"net/url"
 	"path"
 
 	"github.com/mpppk/unravel-twitter/adapter"
@@ -33,15 +32,15 @@ var RootCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		api := twitter.CreateClient(config)
+		crawler := twitter.NewCrawler(&twitter.Config{
+			ScreenName:        screenName,
+			ConsumerKey:       config.ConsumerKey,
+			ConsumerSecret:    config.ConsumerSecret,
+			AccessToken:       config.AccessToken,
+			AccessTokenSecret: config.AccessTokenSecret,
+		})
 
-		tweets, err := api.GetUserTimeline(url.Values{
-			"screen_name":     []string{screenName},
-			"count":           []string{"200"},
-			"exclude_replies": []string{"true"},
-			"trim_user":       []string{"true"},
-			"include_rts":     []string{"false"},
-			"max_id":          []string{config.MaxId}})
+		tweets, err := crawler.Fetch(891205360702210049)
 
 		if err != nil {
 			fmt.Println("GetUserTimeline error")
