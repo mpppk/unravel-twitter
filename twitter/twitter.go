@@ -83,7 +83,8 @@ func (c *Crawler) SaveTweet(tweet anaconda.Tweet) error {
 
 		err := c.unravelAdapter.AddLabelsToImage(image, []adapter.NewLabel{
 			{Name: "twitter"},
-			{Name: "twitterid", Value: fmt.Sprint(tweet.Id)},
+			{Name: "twitter_id", Value: fmt.Sprint(tweet.Id)},
+			{Name: "post_date", Value: fmt.Sprint(tweet.CreatedAt)},
 		})
 
 		if err != nil {
