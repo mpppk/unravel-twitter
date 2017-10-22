@@ -7,9 +7,6 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-
 	"github.com/mpppk/unravel-twitter/adapter"
 	"github.com/mpppk/unravel-twitter/etc"
 	"github.com/mpppk/unravel-twitter/twitter"
@@ -61,24 +58,18 @@ var RootCmd = &cobra.Command{
 			}
 		}
 
-		db, err := gorm.Open("sqlite3", "test2.db")
+		adpt, err := adapter.New(true)
 		if err != nil {
 			panic(err)
 		}
-		defer db.Close()
 
-		// Migrate the schema
-		db.AutoMigrate(&adapter.Image{}, &adapter.Label{})
-
-		var twitterLabel adapter.Label
-		db.FirstOrCreate(&twitterLabel, adapter.Label{Name: "twitter"})
-		var userLabel adapter.Label
-		db.FirstOrCreate(&userLabel, adapter.Label{Name: screenName})
 		for _, tweetImage := range tweetImages {
-			db.Create(tweetImage).Association("Labels").Append(
-				[]adapter.Label{twitterLabel},
-			)
+			err := adpt.AddLabelsToImage(tweetImage, []string{"twitter"})
+			if err != nil {
+				panic(err)
+			}
 		}
+		adpt.Close()
 	},
 }
 
