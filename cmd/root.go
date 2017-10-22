@@ -10,6 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
+	"github.com/mpppk/unravel-twitter/adapter"
 	"github.com/mpppk/unravel-twitter/etc"
 	"github.com/mpppk/unravel-twitter/twitter"
 	"github.com/spf13/cobra"
@@ -50,10 +51,10 @@ var RootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		tweetImages := []*twitter.Image{}
+		tweetImages := []*adapter.Image{}
 		for _, tweet := range tweets {
 			for _, media := range tweet.Entities.Media {
-				tweetImages = append(tweetImages, &twitter.Image{
+				tweetImages = append(tweetImages, &adapter.Image{
 					Url:         media.Media_url,
 					Description: tweet.Text,
 				})
@@ -67,14 +68,15 @@ var RootCmd = &cobra.Command{
 		defer db.Close()
 
 		// Migrate the schema
-		db.AutoMigrate(&twitter.Image{}, &twitter.Label{})
+		db.AutoMigrate(&adapter.Image{}, &adapter.Label{})
 
-		var twitterLabel twitter.Label
-		db.FirstOrCreate(&twitterLabel, twitter.Label{Name: "twitter"})
-
+		var twitterLabel adapter.Label
+		db.FirstOrCreate(&twitterLabel, adapter.Label{Name: "twitter"})
+		var userLabel adapter.Label
+		db.FirstOrCreate(&userLabel, adapter.Label{Name: screenName})
 		for _, tweetImage := range tweetImages {
 			db.Create(tweetImage).Association("Labels").Append(
-				[]twitter.Label{twitterLabel},
+				[]adapter.Label{twitterLabel},
 			)
 		}
 	},
