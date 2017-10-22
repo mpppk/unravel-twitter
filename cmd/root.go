@@ -48,27 +48,28 @@ var RootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		tweetImages := []*adapter.Image{}
-		for _, tweet := range tweets {
-			for _, media := range tweet.Entities.Media {
-				tweetImages = append(tweetImages, &adapter.Image{
-					Url:         media.Media_url,
-					Description: tweet.Text,
-				})
-			}
-		}
-
-		adpt, err := adapter.New(true)
+		adpt, err := adapter.New(false)
 		if err != nil {
 			panic(err)
 		}
 
-		for _, tweetImage := range tweetImages {
-			err := adpt.AddLabelsToImage(tweetImage, []string{"twitter"})
-			if err != nil {
-				panic(err)
+		for _, tweet := range tweets {
+			for _, media := range tweet.Entities.Media {
+				image := &adapter.Image{
+					Url:         media.Media_url,
+					Description: tweet.Text,
+				}
+
+				err := adpt.AddLabelsToImage(image, []adapter.NewLabel{
+					{Name: "twitter"},
+					{Name: "twitterid", Value: fmt.Sprint(tweet.Id)},
+				})
+				if err != nil {
+					panic(err)
+				}
 			}
 		}
+
 		adpt.Close()
 	},
 }
