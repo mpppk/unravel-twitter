@@ -6,6 +6,8 @@ import (
 
 	"path"
 
+	"time"
+
 	"github.com/mpppk/unravel-twitter/etc"
 	"github.com/mpppk/unravel-twitter/twitter"
 	"github.com/spf13/cobra"
@@ -37,16 +39,18 @@ var RootCmd = &cobra.Command{
 			ConsumerSecret:    config.ConsumerSecret,
 			AccessToken:       config.AccessToken,
 			AccessTokenSecret: config.AccessTokenSecret,
+			SinceDate:         time.Now().Add(-time.Duration(24*30*12) * time.Hour),
 		})
 		if err != nil {
 			panic(err)
 		}
 
-		err = crawler.FetchAndSave(891205360702210049)
+		defer crawler.Close()
+
+		err = crawler.FetchAndSave()
 		if err != nil {
 			panic(err)
 		}
-		crawler.Close()
 	},
 }
 
