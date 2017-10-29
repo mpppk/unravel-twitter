@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"net/url"
 	"path"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"time"
 
 	"github.com/mpppk/unravel-twitter/etc"
 	"github.com/mpppk/unravel-twitter/twitter"
@@ -35,45 +33,23 @@ var RootCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		api := twitter.CreateClient(config)
-
-		tweets, err := api.GetUserTimeline(url.Values{
-			"screen_name":     []string{screenName},
-			"count":           []string{"200"},
-			"exclude_replies": []string{"true"},
-			"trim_user":       []string{"true"},
-			"include_rts":     []string{"false"},
-			"max_id":          []string{config.MaxId}})
-
-		if err != nil {
-			fmt.Println("GetUserTimeline error")
-			panic(err)
-		}
-
-		tweetImages := []twitter.MetaData{}
-		for _, tweet := range tweets {
-			for _, media := range tweet.Entities.Media {
-				tweetImages = append(tweetImages, &twitter.TweetImageMetaData{
-					MediaType:   "twitter",
-					Source:      screenName,
-					MediaNo:     tweet.Id,
-					Url:         media.Media_url,
-					Description: tweet.Text,
-				})
-			}
-		}
-
-		db, err := gorm.Open("sqlite3", "test.db")
+		crawler, err := twitter.NewCrawler(&twitter.Config{
+			ScreenName:        screenName,
+			ConsumerKey:       config.ConsumerKey,
+			ConsumerSecret:    config.ConsumerSecret,
+			AccessToken:       config.AccessToken,
+			AccessTokenSecret: config.AccessTokenSecret,
+			SinceDate:         time.Now().Add(-time.Duration(24*30*12) * time.Hour),
+		})
 		if err != nil {
 			panic(err)
 		}
-		defer db.Close()
 
-		// Migrate the schema
-		db.AutoMigrate(&twitter.TweetImageMetaData{})
+		defer crawler.Close()
 
-		for _, tweetImage := range tweetImages {
-			db.Create(tweetImage)
+		err = crawler.FetchAndSave()
+		if err != nil {
+			panic(err)
 		}
 	},
 }
