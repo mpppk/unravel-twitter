@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
-	"github.com/mpppk/unravel-twitter/adapter"
+	"github.com/mpppk/unravel-twitter-worker/adapter"
 )
 
 type Config struct {
