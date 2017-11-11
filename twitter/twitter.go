@@ -122,6 +122,9 @@ func (c *Crawler) Close() {
 func NewCrawler(config *Config) (*Crawler, error) {
 	client := CreateClient(config)
 	adpt, err := adapter.New(false)
+
+	adpt.SearchByLabelValue(nil)
+
 	return &Crawler{
 		client:         client,
 		config:         config,
