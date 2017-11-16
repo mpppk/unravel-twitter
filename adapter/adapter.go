@@ -1,8 +1,6 @@
 package adapter
 
 import (
-	"fmt"
-
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
@@ -74,25 +72,28 @@ func (a *Adapter) AddLabelsToImage(image *Image, newLabels []NewLabel) error {
 	return nil
 }
 
-func (a *Adapter) SearchByLabelValue(label *NewLabel) {
+func (a *Adapter) SearchByLabelValue(labelName string, labelValue interface{}) ([]Image, error) {
 	rows, err := a.db.Raw("SELECT * FROM labels "+
 		"INNER JOIN image_labels "+
 		"ON labels.id = image_labels.label_id "+
 		"INNER JOIN images "+
 		"ON images.id = image_labels.image_id "+
 		"WHERE name = ? "+
-		"AND value = ?", "twitter_id", 921679315951017984).Rows()
+		"AND value = ?", labelName, labelValue).Rows()
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer rows.Close()
 
+	var images []Image
 	for rows.Next() {
 		var image Image
 		a.db.ScanRows(rows, &image)
-		fmt.Printf("%#v", image)
+		images = append(images, image)
 	}
+
+	return images, nil
 }
 
 func New(debugMode bool) (*Adapter, error) {
