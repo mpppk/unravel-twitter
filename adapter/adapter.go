@@ -73,7 +73,7 @@ func (a *Adapter) AddLabelsToImage(image *Image, newLabels []NewLabel) error {
 }
 
 func (a *Adapter) SearchByLabelValue(labelName string, labelValue interface{}) ([]Image, error) {
-	rows, err := a.db.Raw("SELECT * FROM labels "+
+	rows, err := a.db.Raw("SELECT images.id FROM labels "+
 		"INNER JOIN image_labels "+
 		"ON labels.id = image_labels.label_id "+
 		"INNER JOIN images "+
@@ -86,12 +86,15 @@ func (a *Adapter) SearchByLabelValue(labelName string, labelValue interface{}) (
 	}
 	defer rows.Close()
 
-	var images []Image
+	var ids []int64
 	for rows.Next() {
-		var image Image
-		a.db.ScanRows(rows, &image)
-		images = append(images, image)
+		var id int64
+		rows.Scan(&id)
+		ids = append(ids, id)
 	}
+
+	var images []Image
+	a.db.Where(ids).Preload("Labels").Find(&images)
 
 	return images, nil
 }
