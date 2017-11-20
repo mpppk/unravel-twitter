@@ -1,6 +1,8 @@
 package adapter
 
 import (
+	"errors"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
@@ -71,6 +73,30 @@ func (a *Adapter) AddLabelsToImage(image *Image, newLabels []NewLabel) error {
 			Update(&ImageLabel{Value: newLabel.Value})
 	}
 	return nil
+}
+
+func (a *Adapter) FindByMaxLabelValue(labelName string) (*Image, error) {
+	rows, err := a.db.Raw("SELECT MAX(image_labels.value), images.id FROM labels "+
+		"INNER JOIN image_labels "+
+		"ON labels.id = image_labels.label_id "+
+		"INNER JOIN images "+
+		"ON images.id = image_labels.image_id "+
+		"WHERE name = ? ", labelName).Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var maxValue string
+		var imageId int
+		var image Image
+		rows.Scan(&maxValue, &imageId)
+		a.db.Where(imageId).Preload("Labels").First(&image)
+		return &image, nil
+	}
+	return nil, errors.New("not found")
 }
 
 func (a *Adapter) SearchByLabelValue(labelName string, labelValue interface{}) ([]Image, error) {
