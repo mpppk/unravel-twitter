@@ -15,6 +15,7 @@ type Image struct {
 type Label struct {
 	gorm.Model
 	Name   string
+	Value  string  `gorm:"-"`
 	Images []Image `gorm:"many2many:image_labels;"`
 }
 
@@ -79,7 +80,7 @@ func (a *Adapter) SearchByLabelValue(labelName string, labelValue interface{}) (
 		"INNER JOIN images "+
 		"ON images.id = image_labels.image_id "+
 		"WHERE name = ? "+
-		"AND value = ?", labelName, labelValue).Rows()
+		"AND image_labels.value = ?", labelName, labelValue).Rows()
 
 	if err != nil {
 		return nil, err
@@ -95,6 +96,34 @@ func (a *Adapter) SearchByLabelValue(labelName string, labelValue interface{}) (
 
 	var images []Image
 	a.db.Where(ids).Preload("Labels").Find(&images)
+
+	// Set Label Value
+	// FIXME This is N+1 query
+	for _, image := range images {
+		labelRows, err := a.db.Raw("SELECT name, image_labels.value FROM labels "+
+			"INNER JOIN image_labels "+
+			"ON labels.id = image_labels.label_id "+
+			"INNER JOIN images "+
+			"ON images.id = image_labels.image_id "+
+			"WHERE image_id = ?", image.ID).Rows()
+
+		if err != nil {
+			return nil, err
+		}
+
+		for labelRows.Next() {
+			var name string
+			var value string
+			labelRows.Scan(&name, &value)
+			for i, label := range image.Labels {
+				if label.Name == name {
+					image.Labels[i].Value = value
+				}
+			}
+		}
+
+		labelRows.Close()
+	}
 
 	return images, nil
 }
