@@ -8,8 +8,8 @@ import (
 
 	"time"
 
-	"github.com/mpppk/unravel-twitter/etc"
-	"github.com/mpppk/unravel-twitter/twitter"
+	"github.com/mpppk/unravel-twitter-worker/etc"
+	"github.com/mpppk/unravel-twitter-worker/twitter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
