@@ -94,6 +94,13 @@ func (a *Adapter) FindByMaxLabelValue(labelName string) (*Image, error) {
 		var image Image
 		rows.Scan(&maxValue, &imageId)
 		a.db.Where(imageId).Preload("Labels").First(&image)
+
+		for i, label := range image.Labels {
+			if label.Name == labelName {
+				image.Labels[i].Value = maxValue
+			}
+		}
+
 		return &image, nil
 	}
 	return nil, errors.New("not found")
