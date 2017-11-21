@@ -7,6 +7,8 @@ import (
 
 	"time"
 
+	"strconv"
+
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/mpppk/unravel-twitter-worker/adapter"
 )
@@ -47,6 +49,15 @@ func (c *Crawler) Fetch() ([]anaconda.Tweet, bool, error) {
 
 	if c.beforeMaxId != -1 {
 		values["max_id"] = []string{fmt.Sprint(c.beforeMaxId)}
+	}
+
+	id, ok, err := c.GetLatestSavedTweetId()
+	if err != nil {
+		return nil, false, err
+	}
+
+	if ok {
+		values["since_id"] = []string{fmt.Sprint(id)}
 	}
 
 	tweets, err := c.client.GetUserTimeline(values)
@@ -115,6 +126,22 @@ func (c *Crawler) FetchAndSave() error {
 	return nil
 }
 
+func (c *Crawler) GetLatestSavedTweetId() (uint, bool, error) {
+	image, err := c.unravelAdapter.FindByMaxLabelValue("twitter_id")
+	if err != nil {
+		return 0, false, err
+	}
+
+	for _, label := range image.Labels {
+		if label.Name == "twitter_id" {
+			v, err := strconv.ParseUint(label.Value, 10, 64)
+			return uint(v), true, err
+		}
+	}
+
+	return 0, false, nil
+}
+
 func (c *Crawler) Close() {
 	c.unravelAdapter.Close()
 }
@@ -123,7 +150,9 @@ func NewCrawler(config *Config) (*Crawler, error) {
 	client := CreateClient(config)
 	adpt, err := adapter.New(false)
 
-	adpt.SearchByLabelValue(nil)
+	if err != nil {
+		panic(err)
+	}
 
 	return &Crawler{
 		client:         client,
