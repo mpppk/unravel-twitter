@@ -89,7 +89,7 @@ func (c *Crawler) SaveTweet(tweet anaconda.Tweet) error {
 	for _, media := range tweet.Entities.Media {
 		image := &adapter.Image{
 			Url:         media.Media_url,
-			Description: tweet.Text,
+			Description: tweet.FullText,
 		}
 
 		err := c.unravelAdapter.AddLabelsToImage(image, []adapter.NewLabel{
